@@ -1,1 +1,0 @@
-# Obsidian Map File Generator

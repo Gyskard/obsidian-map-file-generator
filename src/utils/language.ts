@@ -14,7 +14,7 @@ export const messages = {
       },
       url: {
         label: 'Google Maps URL',
-        rule: 'Google Maps is required'
+        rule: 'Google Maps URL is required'
       }
     },
     logs: {
