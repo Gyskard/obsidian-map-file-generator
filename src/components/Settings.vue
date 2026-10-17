@@ -7,16 +7,23 @@
       <el-select
         v-model="form.tags"
         multiple
+        filterable
         :placeholder="$t('form.tags.placeholder')"
         :validate-event="false"
       >
         <el-option
           v-for="item in tagList"
           :key="item.value"
-          :label="$t(item.label)"
+          :label="item.value"
           :value="item.value"
         />
       </el-select>
+    </el-form-item>
+    <el-form-item :label="$t('form.folder.label')">
+      <el-button v-if="canChooseFolder" @click="chooseFolder">
+        {{ folder?.name ?? $t('form.folder.button') }}
+      </el-button>
+      <el-text v-else>{{ $t('form.folder.unsupported') }}</el-text>
     </el-form-item>
     <el-form-item class="mt-6">
       <el-button type="primary" @click="submitForm(formRef)">{{
@@ -28,23 +35,34 @@
 
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
-import { reactive, ref } from 'vue'
+import { reactive, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Form, Tag } from '@/types/settings.types'
+import type { Form } from '@/types/settings.types'
+import { tagList } from '@/config/tags'
 import { useLogsStore } from '@/stores/logs'
-import { downloadFile, getDataFromURL } from '@/utils/data'
+import { fileExists, getDataFromURL, isPlaceURL, saveFile, toMarkdown } from '@/utils/data'
 import { Status } from '@/types/data.types'
 
 const logsStore = useLogsStore()
 const { t } = useI18n()
 
-const tagList: Tag[] = [{ label: 'form.tags.values.todo', value: 'todo' }]
 const form = reactive<Form>({ url: '', tags: [tagList[0].value] })
 const formRef = ref<FormInstance>()
 
+// Writing directly in a folder is only supported by Chromium based browsers
+const canChooseFolder = 'showDirectoryPicker' in window
+const folder = shallowRef<FileSystemDirectoryHandle>()
+
+const chooseFolder = async () => {
+  try {
+    folder.value = await window.showDirectoryPicker({ mode: 'readwrite' })
+  } catch {
+    // picker closed without choosing a folder
+  }
+}
+
 const validateURL = (_: any, value: any, callback: any) => {
-  if (!value.startsWith('https://www.google.com/maps/place/'))
-    callback(new Error(t('form.url.rule')))
+  if (!isPlaceURL(value)) callback(new Error(t('form.url.rule')))
   else callback()
 }
 
@@ -53,10 +71,22 @@ const rules = reactive<FormRules<Form>>({
   tags: { required: true, message: t('form.tags.rule') }
 })
 
-const generateFile = () => {
+const generateFile = async () => {
   try {
     const dataFromURL = getDataFromURL(form.url)
-    downloadFile({ ...dataFromURL, tags: form.tags })
+    const fileName = `${dataFromURL.name}.md`
+    if (
+      folder.value &&
+      (await fileExists(folder.value, fileName)) &&
+      !window.confirm(t('confirm.overwrite', { name: fileName }))
+    ) {
+      logsStore.addLog({
+        text: `${t('logs.status.cancelled')} ${dataFromURL.name}`,
+        status: Status.Failed
+      })
+      return
+    }
+    await saveFile(fileName, toMarkdown({ ...dataFromURL, tags: form.tags }, tagList), folder.value)
     logsStore.addLog({
       text: `${t('logs.status.success')} ${dataFromURL.name}`,
       status: Status.Success
@@ -68,9 +98,9 @@ const generateFile = () => {
 
 const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  await formEl.validate((valid) => {
+  await formEl.validate(async (valid) => {
     if (valid) {
-      generateFile()
+      await generateFile()
       form.url = ''
     }
   })

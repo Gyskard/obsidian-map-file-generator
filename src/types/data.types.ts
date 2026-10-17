@@ -1,6 +1,7 @@
 export interface UrlData {
   name: string
-  localisation: string
+  latitude: string
+  longitude: string
 }
 
 export interface Place extends UrlData {
