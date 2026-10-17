@@ -7,20 +7,27 @@ export const messages = {
       tags: {
         label: 'Tags',
         placeholder: 'Select tags',
-        rule: 'At least one tag is required',
-        values: {
-          todo: 'Todo'
-        }
+        rule: 'At least one tag is required'
       },
       url: {
         label: 'Google Maps URL',
-        rule: 'Google Maps URL is required'
+        rule: 'Google Maps place URL is required'
+      },
+      folder: {
+        label: 'Folder',
+        button: 'Choose folder',
+        unsupported:
+          'Files are downloaded (choosing a folder requires Chrome, Edge or another Chromium browser)'
       }
+    },
+    confirm: {
+      overwrite: '{name} already exists in this folder. Replace it?'
     },
     logs: {
       status: {
         success: 'generate file for',
-        failed: 'something bad happened :'
+        failed: 'something bad happened :',
+        cancelled: 'file already exists, cancelled for'
       }
     }
   }
