@@ -23,18 +23,32 @@ Generated file:
 coordinates:
   - "41.6880083"
   - "44.8109444"
-icon: "list"
-color: "#2b2b2b"
+type: "[[todo]]"
 tags:
-  - todo
+  - roadtrip
 ---
 ```
 
-In the map view, set the marker coordinates, icon and color to the `coordinates`, `icon` and `color` properties.
+## Types
 
-## Tags
+Place types are listed in `src/config/tags.ts`. The first selected type becomes the `type` property, other selected values (or new values typed in the field) become `tags`.
 
-Tags, with their marker icon ([Lucide](https://lucide.dev/icons) name) and color, are defined in `src/config/tags.ts`. The marker uses the icon and color of the first selected tag that defines them.
+Each type is a note of your vault holding the marker icon ([Lucide](https://lucide.dev/icons) name) and color, for example `todo.md`:
+
+```
+---
+icon: "list"
+color: "#2b2b2b"
+---
+```
+
+In your base, add these formulas and use them as marker icon and color, with `coordinates` as marker coordinates:
+
+```
+formulas:
+  typeIcon: if(type, list(type)[0].asFile().properties.icon, "circle")
+  typeColor: if(type, list(type)[0].asFile().properties.color, "var(--color-blue)")
+```
 
 ## Built With
 
