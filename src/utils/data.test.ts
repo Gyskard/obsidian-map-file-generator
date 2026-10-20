@@ -1,11 +1,7 @@
 import { describe, expect, it } from '@jest/globals'
-import { cleanName, getDataFromURL, getMarker, isPlaceURL, removeAddress, toMarkdown } from './data'
+import { cleanName, getDataFromURL, isPlaceURL, removeAddress, toMarkdown } from './data'
 
-const tagList = [
-  { value: 'todo', icon: 'list', color: '#2b2b2b' },
-  { value: 'food', icon: 'utensils', color: 'var(--color-green)' },
-  { value: 'trip' }
-]
+const typeList = ['todo', 'food']
 
 describe('getDataFromURL', () => {
   it('should use the place pin rather than the map view center', () => {
@@ -80,43 +76,26 @@ describe('cleanName', () => {
   })
 })
 
-describe('getMarker', () => {
-  it('should use the first tag defining an icon', () => {
-    expect(getMarker(['trip', 'food', 'todo'], tagList)).toStrictEqual({
-      icon: 'utensils',
-      color: 'var(--color-green)'
-    })
-  })
-  it('should use the default marker for unknown tags', () => {
-    expect(getMarker(['trip', 'unknown'], tagList)).toStrictEqual({
-      icon: 'circle',
-      color: 'var(--color-blue)'
-    })
-  })
-})
-
 describe('toMarkdown', () => {
-  it('should generate the frontmatter for the Obsidian Bases map view', () => {
-    const place = {
-      name: 'A',
-      latitude: '41.6880083',
-      longitude: '-44.8109444',
-      tags: ['todo', 'trip']
-    }
-    expect(toMarkdown(place, tagList)).toEqual(
+  const place = { name: 'A', latitude: '41.6880083', longitude: '-44.8109444' }
+  it('should link the first selected type and keep the other values as tags', () => {
+    expect(toMarkdown({ ...place, tags: ['trip', 'food', 'todo'] }, typeList)).toEqual(
       [
         '---',
         'coordinates:',
         '  - "41.6880083"',
         '  - "-44.8109444"',
-        'icon: "list"',
-        'color: "#2b2b2b"',
+        'type: "[[food]]"',
         'tags:',
-        '  - todo',
         '  - trip',
+        '  - todo',
         '---',
         ''
       ].join('\n')
     )
+  })
+  it('should omit tags when only a type is selected and type when none is selected', () => {
+    expect(toMarkdown({ ...place, tags: ['todo'] }, typeList)).not.toContain('tags:')
+    expect(toMarkdown({ ...place, tags: ['trip'] }, typeList)).not.toContain('type:')
   })
 })

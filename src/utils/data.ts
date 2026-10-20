@@ -1,6 +1,4 @@
 import type { Place, UrlData } from '../types/data.types'
-import type { Tag } from '../types/settings.types'
-import { defaultColor, defaultIcon } from '../config/tags'
 import saveAs from 'file-saver'
 
 const placeURL = /^https:\/\/(?:www\.)?google\.[a-z.]+\/maps\/place\/([^/?#]+)/
@@ -38,25 +36,17 @@ export const getDataFromURL = (url: string): UrlData => {
   }
 }
 
-export const getMarker = (tags: Array<string>, tagList: Array<Tag>) => {
-  const selected = tags.map((value) => tagList.find((tag) => tag.value === value))
-  return {
-    icon: selected.find((tag) => tag?.icon)?.icon ?? defaultIcon,
-    color: selected.find((tag) => tag?.color)?.color ?? defaultColor
-  }
-}
-
-export const toMarkdown = (place: Place, tagList: Array<Tag>): string => {
-  const { icon, color } = getMarker(place.tags, tagList)
+// The first selected value that is a type becomes the `type` link, the others become tags
+export const toMarkdown = (place: Place, typeList: Array<string>): string => {
+  const type = place.tags.find((tag) => typeList.includes(tag))
+  const tags = place.tags.filter((tag) => tag !== type)
   return [
     '---',
     'coordinates:',
     `  - ${JSON.stringify(place.latitude)}`,
     `  - ${JSON.stringify(place.longitude)}`,
-    `icon: ${JSON.stringify(icon)}`,
-    `color: ${JSON.stringify(color)}`,
-    'tags:',
-    ...place.tags.map((tag) => `  - ${tag}`),
+    ...(type ? [`type: ${JSON.stringify(`[[${type}]]`)}`] : []),
+    ...(tags.length ? ['tags:', ...tags.map((tag) => `  - ${tag}`)] : []),
     '---',
     ''
   ].join('\n')

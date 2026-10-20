@@ -8,15 +8,11 @@
         v-model="form.tags"
         multiple
         filterable
+        allow-create
         :placeholder="$t('form.tags.placeholder')"
         :validate-event="false"
       >
-        <el-option
-          v-for="item in tagList"
-          :key="item.value"
-          :label="item.value"
-          :value="item.value"
-        />
+        <el-option v-for="item in typeList" :key="item" :label="item" :value="item" />
       </el-select>
     </el-form-item>
     <el-form-item :label="$t('form.folder.label')">
@@ -38,7 +34,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { reactive, ref, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Form } from '@/types/settings.types'
-import { tagList } from '@/config/tags'
+import { typeList } from '@/config/tags'
 import { useLogsStore } from '@/stores/logs'
 import { fileExists, getDataFromURL, isPlaceURL, saveFile, toMarkdown } from '@/utils/data'
 import { Status } from '@/types/data.types'
@@ -46,7 +42,7 @@ import { Status } from '@/types/data.types'
 const logsStore = useLogsStore()
 const { t } = useI18n()
 
-const form = reactive<Form>({ url: '', tags: [tagList[0].value] })
+const form = reactive<Form>({ url: '', tags: [typeList[0]] })
 const formRef = ref<FormInstance>()
 
 // Writing directly in a folder is only supported by Chromium based browsers
@@ -86,7 +82,11 @@ const generateFile = async () => {
       })
       return
     }
-    await saveFile(fileName, toMarkdown({ ...dataFromURL, tags: form.tags }, tagList), folder.value)
+    await saveFile(
+      fileName,
+      toMarkdown({ ...dataFromURL, tags: form.tags }, typeList),
+      folder.value
+    )
     logsStore.addLog({
       text: `${t('logs.status.success')} ${dataFromURL.name}`,
       status: Status.Success
